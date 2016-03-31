@@ -180,9 +180,7 @@ public class CrimeFragment extends Fragment {
             }
         });
         facesCount = (TextView) v.findViewById(R.id.facesView);
-        if (facesCount == null) {
-            Log.d("Dmessage", "facesCount is:" + facesCount);
-        }
+
         mPhotoViews[0] = (RectOverlay) v.findViewById(R.id.crime_photo);
         mPhotoViews[1] = (RectOverlay) v.findViewById(R.id.imageView1);
         mPhotoViews[2] = (RectOverlay) v.findViewById(R.id.imageView2);
@@ -263,19 +261,13 @@ public class CrimeFragment extends Fragment {
     }
 
     private void updatePhotoView() {
-        Bitmap bitmap = null;
         ActivePhotoIndex = ActivePhotoIndex % 4;
         RectOverlay overlay = mPhotoViews[ActivePhotoIndex];
         if (mPhotoFile == null || !mPhotoFile.exists()) {
             mPhotoViews[ActivePhotoIndex].setContent(null, null);
         } else {
-
-            try {
-                bitmap = PictureUtils.getScaledBitmap(
-                        mPhotoFile.getPath(), getActivity());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            Bitmap bitmap = PictureUtils.getScaledBitmap(
+                    mPhotoFile.getPath(), getActivity());
             FaceDetector detector = new FaceDetector.Builder(this.getContext())
                     .setTrackingEnabled(false)
                     .build();
@@ -284,12 +276,10 @@ public class CrimeFragment extends Fragment {
             Frame frame = new Frame.Builder().setBitmap(bitmap).build();
             SparseArray<Face> faces = detector.detect(frame);
             overlay.setContent(bitmap, faces);
-            if (faces == null) {
-                Log.d("Dmessage", "faces is:" + faces);
-            } else {
-                Log.d("Dmessage", "the number of faces is:" + faces.size());
-                facesCount.setText(faces.size() + " faces detected");
-            }
+
+            Log.d("Dmessage", "the number of faces is:" + faces.size());
+            facesCount.setText(faces.size() + " faces detected");
+
             detector.release();
 //            mPhotoViews[ActivePhotoIndex].setImageBitmap(bitmap);
             ActivePhotoIndex++;
