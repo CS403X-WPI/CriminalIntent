@@ -15,6 +15,8 @@ import android.support.v4.app.FragmentManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.format.DateFormat;
+import android.util.Log;
+import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,7 +26,11 @@ import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.ImageView;
+import android.widget.TextView;
+
+import com.google.android.gms.vision.Frame;
+import com.google.android.gms.vision.face.Face;
+import com.google.android.gms.vision.face.FaceDetector;
 
 import java.io.File;
 import java.util.Date;
@@ -47,8 +53,8 @@ public class CrimeFragment extends Fragment {
     private Button mReportButton;
     private Button mSuspectButton;
     private ImageButton mPhotoButton;
-    private ImageView mPhotoView;
-    private ImageView mPhotoViews[] = new ImageView[4];
+    private TextView facesCount;
+    private RectOverlay mPhotoViews[] = new RectOverlay[4];
     private Integer ActivePhotoIndex= 0;
 
     public static CrimeFragment newInstance(UUID crimeId) {
@@ -173,10 +179,14 @@ public class CrimeFragment extends Fragment {
                 startActivityForResult(captureImage, REQUEST_PHOTO);
             }
         });
-        mPhotoViews[0] = (ImageView) v.findViewById(R.id.crime_photo);
-        mPhotoViews[1] = (ImageView) v.findViewById(R.id.imageView1);
-        mPhotoViews[2] = (ImageView) v.findViewById(R.id.imageView2);
-        mPhotoViews[3] = (ImageView) v.findViewById(R.id.imageView3);
+        facesCount = (TextView) v.findViewById(R.id.facesView);
+        if (facesCount == null) {
+            Log.d("Dmessage", "facesCount is:" + facesCount);
+        }
+        mPhotoViews[0] = (RectOverlay) v.findViewById(R.id.crime_photo);
+        mPhotoViews[1] = (RectOverlay) v.findViewById(R.id.imageView1);
+        mPhotoViews[2] = (RectOverlay) v.findViewById(R.id.imageView2);
+        mPhotoViews[3] = (RectOverlay) v.findViewById(R.id.imageView3);
 
         updatePhotoView();
 
@@ -253,17 +263,35 @@ public class CrimeFragment extends Fragment {
     }
 
     private void updatePhotoView() {
-
-            ActivePhotoIndex = ActivePhotoIndex % 4;
+        Bitmap bitmap = null;
+        ActivePhotoIndex = ActivePhotoIndex % 4;
+        RectOverlay overlay = mPhotoViews[ActivePhotoIndex];
         if (mPhotoFile == null || !mPhotoFile.exists()) {
-            mPhotoViews[ActivePhotoIndex].setImageDrawable(null);
+            mPhotoViews[ActivePhotoIndex].setContent(null, null);
         } else {
 
-            Bitmap bitmap = PictureUtils.getScaledBitmap(
-                    mPhotoFile.getPath(), getActivity());
+            try {
+                bitmap = PictureUtils.getScaledBitmap(
+                        mPhotoFile.getPath(), getActivity());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            FaceDetector detector = new FaceDetector.Builder(this.getContext())
+                    .setTrackingEnabled(false)
+                    .build();
 
-//            mPhotoView = (ImageView) .findViewById(R.id.crime_photo);
-            mPhotoViews[ActivePhotoIndex].setImageBitmap(bitmap);
+            // Create a frame from the bitmap and run face detection on the frame.
+            Frame frame = new Frame.Builder().setBitmap(bitmap).build();
+            SparseArray<Face> faces = detector.detect(frame);
+            overlay.setContent(bitmap, faces);
+            if (faces == null) {
+                Log.d("Dmessage", "faces is:" + faces);
+            } else {
+                Log.d("Dmessage", "the number of faces is:" + faces.size());
+                facesCount.setText(faces.size() + " faces detected");
+            }
+            detector.release();
+//            mPhotoViews[ActivePhotoIndex].setImageBitmap(bitmap);
             ActivePhotoIndex++;
         }
     }
