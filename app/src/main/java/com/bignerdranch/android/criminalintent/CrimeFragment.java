@@ -55,7 +55,10 @@ public class CrimeFragment extends Fragment {
     private ImageButton mPhotoButton;
     private TextView facesCount;
     private RectOverlay mPhotoViews[] = new RectOverlay[4];
-    private Integer ActivePhotoIndex= 0;
+    private static Integer ActivePhotoIndex= 0;
+    private Bitmap[] imageList = new Bitmap[4];
+    private CheckBox mFaceDetectBox;
+    private Boolean isFaceOn = false;
 
     public static CrimeFragment newInstance(UUID crimeId) {
         Bundle args = new Bundle();
@@ -105,6 +108,17 @@ public class CrimeFragment extends Fragment {
 
             }
         });
+
+        mFaceDetectBox = (CheckBox) v.findViewById(R.id.checkBox);
+        mFaceDetectBox.setChecked(false);
+        mFaceDetectBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                isFaceOn = isChecked;
+            }
+        });
+
+
 
         mDateButton = (Button) v.findViewById(R.id.crime_date);
         updateDate();
@@ -185,9 +199,6 @@ public class CrimeFragment extends Fragment {
         mPhotoViews[1] = (RectOverlay) v.findViewById(R.id.imageView1);
         mPhotoViews[2] = (RectOverlay) v.findViewById(R.id.imageView2);
         mPhotoViews[3] = (RectOverlay) v.findViewById(R.id.imageView3);
-
-        updatePhotoView();
-
         return v;
     }
 
@@ -268,21 +279,63 @@ public class CrimeFragment extends Fragment {
         } else {
             Bitmap bitmap = PictureUtils.getScaledBitmap(
                     mPhotoFile.getPath(), getActivity());
-            FaceDetector detector = new FaceDetector.Builder(this.getContext())
-                    .setTrackingEnabled(false)
-                    .build();
+            if (isFaceOn) {
+                FaceDetector detector = new FaceDetector.Builder(this.getContext())
+                        .setTrackingEnabled(false)
+                        .build();
 
-            // Create a frame from the bitmap and run face detection on the frame.
-            Frame frame = new Frame.Builder().setBitmap(bitmap).build();
-            SparseArray<Face> faces = detector.detect(frame);
-            overlay.setContent(bitmap, faces);
+                // Create a frame from the bitmap and run face detection on the frame.
+                Frame frame = new Frame.Builder().setBitmap(bitmap).build();
+                SparseArray<Face> faces = detector.detect(frame);
+                overlay.setContent(bitmap, faces);
 
-            Log.d("Dmessage", "the number of faces is:" + faces.size());
-            facesCount.setText(faces.size() + " faces detected");
+                Log.d("Dmessage", "the number of faces is:" + faces.size());
+                facesCount.setText(faces.size() + " faces detected");
 
-            detector.release();
-//            mPhotoViews[ActivePhotoIndex].setImageBitmap(bitmap);
+                detector.release();
+            } else {
+                SparseArray<Face> faces = new SparseArray<Face>();
+                facesCount.setText(0 + " faces detected");
+                overlay.setContent(bitmap, faces);
+            }
             ActivePhotoIndex++;
+//            mPhotoViews[ActivePhotoIndex].setImageBitmap(bitmap);
+        }
+    }
+
+
+    private void shiftArray() {
+        Bitmap temp = null;
+
+        for (int i = imageList.length-1; i >=1; i--) {
+
+            if(imageList[i]!=null || imageList[i-1]!=null){
+
+                imageList[i] = imageList[i-1];
+
+            }
+        }
+    }
+
+    private void updateViews(){
+        for(int i = 1; i < imageList.length;i++){
+            if(imageList[i] !=null) {
+                Bitmap bitmap = imageList[i];
+                RectOverlay overlay = mPhotoViews[i];
+
+                FaceDetector detector = new FaceDetector.Builder(this.getContext())
+                        .setTrackingEnabled(false)
+                        .build();
+                Frame frame = new Frame.Builder().setBitmap(bitmap).build();
+                SparseArray<Face> faces = detector.detect(frame);
+                overlay.setContent(bitmap, faces);
+
+                Log.d("Dmessage", "the number of faces is:" + faces.size());
+                facesCount.setText(faces.size() + " faces detected");
+
+                detector.release();
+
+            }
         }
     }
 }
