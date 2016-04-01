@@ -42,7 +42,15 @@
         android:layout_marginRight="16dp"
         android:text="@string/crime_report_text"
         />
-
+    <TextView
+        android:id="@+id/previousImages"
+        android:layout_width = "match_parent"
+        android:layout_height = "wrap_content"
+        android:text="Previous Images"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:paddingBottom="2dp"
+        />
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
